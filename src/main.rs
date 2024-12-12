@@ -50,8 +50,7 @@ async fn main() -> Result<()> {
     let (serial_queue_writer, serial_queue_reader): (Sender<Vec<u8>>, Receiver<Vec<u8>>) =
         mpsc::channel();
 
-    let mut serial_stream =
-        tokio_serial::new("/dev/tty.PL2303G-USBtoUART210", 9600).open_native_async()?;
+    let mut serial_stream = tokio_serial::new(args.serial_device, 9600).open_native_async()?;
 
     serial_stream
         .set_exclusive(false)
