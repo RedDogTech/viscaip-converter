@@ -82,12 +82,12 @@ async fn main() -> Result<()> {
 
             info!("-> udp header:{:02X?}, payload{:02X?}", ip_header, rs232);
 
-            let mut test = Cursor::new(ip_header);
+            let mut header = Cursor::new(ip_header);
 
-            test.read_u8()?;
-            test.read_u8()?;
-            test.read_u16::<BigEndian>()?;
-            seq_number = test.read_u32::<BigEndian>()?;
+            header.read_u8()?;
+            header.read_u8()?;
+            header.read_u16::<BigEndian>()?;
+            seq_number = header.read_u32::<BigEndian>()?;
 
             serial_queue_writer
                 .send(rs232.to_vec())
