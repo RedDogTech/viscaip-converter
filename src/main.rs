@@ -1,7 +1,7 @@
 use anyhow::Result;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use clap::Parser;
-use log::info;
+use log::{info, warn};
 use std::io::Cursor;
 use std::io::{Read, Write};
 use std::net::SocketAddr;
@@ -52,9 +52,10 @@ async fn main() -> Result<()> {
 
     let mut serial_stream = tokio_serial::new(args.serial_device, 9600).open_native_async()?;
 
-    serial_stream
-        .set_exclusive(false)
-        .expect("Failed to set serial to exclusive");
+    #[cfg(unix)]
+    if let Err(e) = serial_stream.set_exclusive(true) {
+        warn!("set_exclusive: Failed to set exclusive mode: {}", e);
+    }
 
     let wrapped_serial = Arc::new(Mutex::new(serial_stream));
     let mut buf = vec![0; 1024];
@@ -65,7 +66,7 @@ async fn main() -> Result<()> {
             let mut ser = thread_serial.lock().unwrap();
             let _ = ser.write(&data).unwrap();
         }
-        thread::sleep(Duration::from_millis(250));
+        thread::sleep(Duration::from_millis(100));
     });
 
     let main_serial = Arc::clone(&wrapped_serial);
@@ -95,7 +96,6 @@ async fn main() -> Result<()> {
 
         let len = {
             let mut ser = main_serial.lock().unwrap();
-
             ser.read(&mut buf)
         };
         if let Ok(serial_len) = len {
